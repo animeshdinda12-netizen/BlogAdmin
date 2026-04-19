@@ -18,7 +18,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         let imageUrl = null;
         const imageFile = document.getElementById('image').files[0];
         if (imageFile) {
-            imageUrl = await uploadToTransfer(imageFile);
+            imageUrl = await uploadToCloudinary(imageFile);
         }
 
         await savePost(content, imageUrl);
@@ -38,16 +38,30 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     }
 });
 
-async function uploadToTransfer(file) {
-    const response = await fetch('https://transfer.sh/' + file.name, {
-        method: 'PUT',
-        body: file
+async function uploadToCloudinary(file) {
+    const cloudName = 'demo'; // Replace with your Cloudinary cloud name
+    const uploadPreset = 'unsigned_preset'; // Replace with your unsigned upload preset
+    const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    const response = await fetch(url, {
+        method: 'POST',
+        body: formData
     });
 
-    if (!response.ok) throw new Error('Image upload failed');
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Cloudinary upload failed: ${errorData.error?.message || 'Unknown error'}`);
+    }
 
-    const url = await response.text();
-    return url.trim();
+    const data = await response.json();
+    if (!data.secure_url) {
+        throw new Error('No secure URL in Cloudinary response');
+    }
+    return data.secure_url;
 }
 
 async function savePost(content, imageUrl) {
