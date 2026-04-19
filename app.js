@@ -18,7 +18,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         let imageUrl = null;
         const imageFile = document.getElementById('image').files[0];
         if (imageFile) {
-            imageUrl = await uploadToImgbb(imageFile);
+            imageUrl = await uploadToFileIO(imageFile);
         }
 
         await savePost(content, imageUrl);
@@ -38,11 +38,11 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     }
 });
 
-async function uploadToImgbb(file) {
+async function uploadToFileIO(file) {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
 
-    const response = await fetch('https://api.imgbb.com/1/upload', {
+    const response = await fetch('https://file.io', {
         method: 'POST',
         body: formData
     });
@@ -50,8 +50,8 @@ async function uploadToImgbb(file) {
     if (!response.ok) throw new Error('Image upload failed');
 
     const data = await response.json();
-    if (!data.success || !data.data?.url) throw new Error('Upload failed');
-    return data.data.url;
+    if (!data.success || !data.link) throw new Error('Upload failed');
+    return data.link;
 }
 
 async function savePost(content, imageUrl) {
