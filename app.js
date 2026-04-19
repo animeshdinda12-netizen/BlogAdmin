@@ -38,20 +38,35 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     }
 });
 
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+
 async function uploadToCatbox(file) {
+    // Convert file to base64
+    const base64 = await fileToBase64(file);
+    // Convert base64 to blob
+    const response = await fetch(base64);
+    const blob = await response.blob();
+
     const formData = new FormData();
     formData.append('reqtype', 'fileupload');
     formData.append('time', '1h');
-    formData.append('fileToUpload', file);
+    formData.append('fileToUpload', blob, 'image.jpg');
 
-    const response = await fetch('https://catbox.moe/user/api.php', {
+    const catboxResponse = await fetch('https://catbox.moe/user/api.php', {
         method: 'POST',
         body: formData
     });
 
-    if (!response.ok) throw new Error('Image upload failed');
+    if (!catboxResponse.ok) throw new Error('Image upload failed');
 
-    const imageUrl = await response.text();
+    const imageUrl = await catboxResponse.text();
     if (!imageUrl.startsWith('https://')) throw new Error('Invalid image URL received');
     return imageUrl.trim();
 }
