@@ -18,7 +18,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         let imageUrl = null;
         const imageFile = document.getElementById('image').files[0];
         if (imageFile) {
-            imageUrl = await uploadToTransfer(imageFile);
+            imageUrl = await uploadToImgur(imageFile);
         }
 
         await savePost(content, imageUrl);
@@ -38,16 +38,23 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     }
 });
 
-async function uploadToTransfer(file) {
-    const response = await fetch('https://transfer.sh/' + file.name, {
-        method: 'PUT',
-        body: file
+async function uploadToImgur(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch('https://api.imgur.com/3/image', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Client-ID f09e5b0c5e1c6b2'
+        },
+        body: formData
     });
 
     if (!response.ok) throw new Error('Image upload failed');
 
-    const url = await response.text();
-    return url.trim();
+    const data = await response.json();
+    if (!data.success || !data.data?.link) throw new Error('Upload failed');
+    return data.data.link;
 }
 
 async function savePost(content, imageUrl) {
