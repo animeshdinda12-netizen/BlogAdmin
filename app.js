@@ -18,7 +18,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
         let imageUrl = null;
         const imageFile = document.getElementById('image').files[0];
         if (imageFile) {
-            imageUrl = await uploadToFileIO(imageFile);
+            imageUrl = await uploadToTransfer(imageFile);
         }
 
         await savePost(content, imageUrl);
@@ -38,20 +38,16 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     }
 });
 
-async function uploadToFileIO(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch('https://file.io', {
-        method: 'POST',
-        body: formData
+async function uploadToTransfer(file) {
+    const response = await fetch('https://transfer.sh/' + file.name, {
+        method: 'PUT',
+        body: file
     });
 
     if (!response.ok) throw new Error('Image upload failed');
 
-    const data = await response.json();
-    if (!data.success || !data.link) throw new Error('Upload failed');
-    return data.link;
+    const url = await response.text();
+    return url.trim();
 }
 
 async function savePost(content, imageUrl) {
